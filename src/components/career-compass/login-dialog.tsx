@@ -8,7 +8,7 @@ import { useAppContext, SignupFormState } from '@/contexts/app-context';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import SkillAssessmentForm from './skill-assessment-form';
+// Removed SkillAssessmentForm import
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -450,7 +450,7 @@ export default function LoginDialog() {
 
   const renderSignUp = () => {
     switch (signUpView) {
-      case 'quiz': return <SkillAssessmentForm questions={signupQuestions} onComplete={handleQuizComplete} />;
+      case 'quiz': return <div className="p-8 text-center">Quiz Feature Unavailable</div>;
       case 'quiz_results': return renderQuizResults();
       case 'form': return renderMultiStepForm();
       default: return renderSignupChoice();
@@ -462,8 +462,8 @@ export default function LoginDialog() {
   return (
     <motion.div className="fixed inset-0 z-50 flex items-center justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-      <motion.div key={loginView + signUpView} initial={{ y: 20, opacity: 0, scale: 0.95 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 20, opacity: 0, scale: 0.95 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="relative z-10 w-[90%] max-w-md rounded-xl border bg-background p-6 shadow-xl">
-        <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-8 w-8 rounded-full" onClick={() => setShowLogin(false)}><X className="h-4 w-4" /><span className="sr-only">Close</span></Button>
+      <motion.div key={loginView + signUpView} initial={{ y: 20, opacity: 0, scale: 0.95 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 20, opacity: 0, scale: 0.95 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="relative z-10 w-[90%] max-w-md rounded-2xl premium-glass p-8 shadow-2xl">
+        <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-8 w-8 rounded-full hover:bg-white/10" onClick={() => setShowLogin(false)}><X className="h-4 w-4" /><span className="sr-only">Close</span></Button>
         {loginView === 'login' && renderLogin()}
         {loginView === 'signup' && renderSignUp()}
       </motion.div>

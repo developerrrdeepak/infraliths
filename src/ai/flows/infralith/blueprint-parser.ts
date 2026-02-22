@@ -1,62 +1,48 @@
-
 'use server';
 
-import { generateAzureObject, analyzeBlueprintDocument } from '@/ai/azure-ai';
+import { analyzeBlueprintDocument, generateAzureObject } from '@/ai/azure-ai';
 
-export interface ParsedBlueprint {
-    projectScope: string;
-    materials: {
-        item: string;
-        quantity: number;
-        unit: string;
-        spec: string;
-    }[];
-    structuralDetails: {
-        floors: number;
-        height: number;
-        totalArea: number;
-        seismicZone: string;
-    };
-}
+/**
+ * Blueprint Parsing Agent — uses Azure Document Intelligence and GPT-4o
+ */
+export async function parseBlueprint(file: string | File) {
+    // 1. OCR Step
+    const ocrText = await analyzeBlueprintDocument(file);
 
-export async function parseBlueprint(input: string | File): Promise<ParsedBlueprint> {
-    console.log("Using Azure AI for Blueprint Intelligence...");
-
-    // 1. OCR Step using Azure Document Intelligence
-    const rawText = await analyzeBlueprintDocument(input);
-
-    // 2. Structuring Step using Azure OpenAI (GPT-4o)
+    // 2. Structured Extraction Step
     const prompt = `
-    Analyze the following OCR text extracted from a construction blueprint using Azure Document Intelligence.
-    Extract high-level structured structural details.
-    
-    OCR TEXT: ${rawText.slice(0, 4000)} // Truncated for token safety
-    
-    You must provide:
-    1. Project Scope (Summary)
-    2. A list of key materials (Steel, Concrete, etc.) with estimated quantities.
-    3. Structural details like floor count, height, and seismic zone.
-    
-    Return valid JSON.
-    {
-      "projectScope": "String",
-      "materials": [{"item": "string", "quantity": number, "unit": "string", "spec": "string"}],
-      "structuralDetails": {"floors": number, "height": number, "totalArea": number, "seismicZone": "string"}
-    }
-  `;
+        Analyze this blueprint OCR text and extract the structural parameters.
+        OCR TEXT:
+        ${ocrText}
+        
+        Extract:
+        - projectScope: Full name of the project
+        - totalFloors: number
+        - height: number (in meters)
+        - totalArea: number (in sqm)
+        - seismicZone: string (II, III, IV, or V)
+        - materials: array of objects { item, quantity, unit, spec }
+        
+        Respond only in JSON.
+    `;
 
     try {
-        return await generateAzureObject<ParsedBlueprint>(prompt);
-    } catch (error) {
-        console.error("Blueprint Parsing Error (Azure):", error);
-        // Fallback data if AI fails
+        const result = await generateAzureObject<any>(prompt);
         return {
-            projectScope: "Standard Mixed-Use Project Evaluation (Azure Fallback)",
-            materials: [
-                { item: "Reinforcement Steel (Fe 500D)", quantity: 250, unit: "Metric Tons", spec: "IS 1786" },
-                { item: "Ready-mix Concrete (M30)", quantity: 5000, unit: "Cubic Meters", spec: "IS 456" }
-            ],
-            structuralDetails: { floors: 12, height: 42.0, totalArea: 15000, seismicZone: "Zone III" }
+            projectScope: result?.projectScope || result?.projectName || "Construction Project",
+            totalFloors: result?.totalFloors || result?.floors || 0,
+            height: result?.height || 0,
+            totalArea: result?.totalArea || result?.area || 0,
+            seismicZone: result?.seismicZone || result?.zone || "Undefined",
+            materials: (result?.materials || []).map((m: any) => ({
+                item: m?.item || m?.name || m?.material || 'Unknown Material',
+                quantity: m?.quantity || m?.amount || 0,
+                unit: m?.unit || m?.measurement || '',
+                spec: m?.spec || m?.specification || m?.standard || ''
+            }))
         };
+    } catch (error) {
+        console.error("Blueprint Parser Error:", error);
+        throw error;
     }
 }

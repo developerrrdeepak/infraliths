@@ -1,24 +1,5 @@
 import { LS_KEYS } from './constants';
-import { auth, db } from './firebase';
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  updateProfile as updateFirebaseAuthProfile,
-  User as FirebaseUser,
-  GoogleAuthProvider,
-  signInWithPopup,
-  deleteUser,
-} from 'firebase/auth';
-import { ref, set, get, child, update, push, serverTimestamp, remove, query, limitToLast, orderByChild, runTransaction } from 'firebase/database';
-import { RoastResumeOutput } from '@/ai/flows/roast-resume';
-import { RankResumeOutput } from '@/ai/flows/rank-resume';
-import { InterviewEvaluation } from '@/ai/flows/mock-interview-flow';
 import { WorkflowResult } from '@/ai/flows/infralith/types';
-
-function sleep(ms: number) {
-  return new Promise((res) => setTimeout(res, ms));
-}
 
 export type UserProfileData = {
   uid: string;
@@ -45,9 +26,6 @@ export type UserProfileData = {
   avatar?: string | null;
   profileCompleted?: boolean;
   createdAt?: any;
-  skillAssessments?: any;
-  resumeEvaluations?: any;
-  mockInterviews?: any;
   chats?: any;
 }
 
@@ -79,8 +57,8 @@ export type Post = {
   id: string;
   authorId: string;
   authorName: string;
-  authorHandle: string;
   authorAvatar: string;
+  authorHandle: string;
   content: string;
   image?: string | null;
   timestamp: number;
@@ -95,6 +73,7 @@ export type ChatMessage = {
   id: string;
   senderId: string;
   text: string;
+  imageUrl?: string | null;
   timestamp: number;
 };
 
@@ -108,185 +87,93 @@ export type ChatSummary = {
   status?: 'pending' | 'accepted';
 };
 
-export type { FirebaseUser };
+// --- MOCK DATABASE HELPER (Local Storage) ---
+const getStorageItem = (key: string) => {
+  if (typeof window === 'undefined') return null;
+  const item = localStorage.getItem(key);
+  return item ? JSON.parse(item) : null;
+};
+
+const setStorageItem = (key: string, value: any) => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(key, JSON.stringify(value));
+};
 
 // --- USER DB SERVICE ---
 export const userDbService = {
-  createUser: async (user: FirebaseUser) => {
-    const userRef = ref(db, 'users/' + user.uid);
-    await set(userRef, {
-      uid: user.uid,
+  createUser: async (user: any) => {
+    const users = getStorageItem('infralith_users') || {};
+    users[user.id] = {
+      uid: user.id,
       email: user.email,
-      name: user.displayName || user.email?.split('@')[0],
-      avatar: user.photoURL,
-      createdAt: serverTimestamp(),
+      name: user.name,
+      avatar: user.image,
+      createdAt: new Date().toISOString(),
       profileCompleted: false,
-    });
+    };
+    setStorageItem('infralith_users', users);
   },
 
   getUser: async (uid: string): Promise<UserProfileData | null> => {
-    const dbRef = ref(db);
-    const snapshot = await get(child(dbRef, `users/${uid}`));
-    return snapshot.exists() ? snapshot.val() : null;
+    const users = getStorageItem('infralith_users') || {};
+    return users[uid] || null;
+  },
+
+  getAllUsers: async (): Promise<UserProfileData[]> => {
+    const users = getStorageItem('infralith_users') || {};
+    return Object.values(users);
   },
 
   updateUser: async (uid: string, data: Partial<UserProfileData>) => {
-    const userRef = ref(db, 'users/' + uid);
-    const cleanData = Object.fromEntries(Object.entries(data).filter(([_, v]) => v !== undefined));
-    await update(userRef, cleanData);
+    const users = getStorageItem('infralith_users') || {};
+    if (users[uid]) {
+      users[uid] = { ...users[uid], ...data };
+      setStorageItem('infralith_users', users);
+    }
   }
 };
 
-// --- AUTH SERVICE ---
+// --- AUTH SERVICE (Mocked for Enterprise context) ---
 export const authService = {
   login: async (email: string, password: string) => {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    return userCredential.user;
+    // Enterprise Auth now handled by Azure AD / NextAuth
+    console.log("Mock login for:", email);
+    return { uid: 'mock-uid', email };
   },
 
   signUp: async (data: Partial<SignUpData>) => {
-    if (!data.email || !data.password) {
-      throw new Error("Email and password are required for signup.");
-    }
-
-    const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-    const user = userCredential.user;
-
-    const fullName = `${data.firstName || ''} ${data.lastName || ''}`.trim();
-    const profileData: Partial<UserProfileData> = {
-      uid: user.uid,
-      email: user.email || undefined,
-      name: fullName || user.email?.split('@')[0],
-      mobile: data.mobile,
-      age: data.age ? parseInt(data.age, 10) : undefined,
-      gender: data.gender,
-      country: data.country,
-      language: data.language,
-      fieldOfInterest: data.fieldOfInterest,
-      avatar: data.avatar || null,
-      createdAt: serverTimestamp(),
-      profileCompleted: true,
-    };
-
-    await updateFirebaseAuthProfile(user, {
-      displayName: profileData.name,
-      photoURL: profileData.avatar || '',
-    });
-
-    await userDbService.updateUser(user.uid, profileData);
-
-    return user;
+    console.log("Mock signup for:", data.email);
+    return { uid: 'mock-uid', email: data.email };
   },
 
   signInOrSignUpWithGoogle: async () => {
-    const provider = new GoogleAuthProvider();
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
-
-    const userProfile = await userDbService.getUser(user.uid);
-    const isNewUser = !userProfile;
-
-    return { user, isNewUser };
+    return { user: { uid: 'mock-google-uid' }, isNewUser: false };
   },
 
   loginWithGoogle: async () => {
-    const provider = new GoogleAuthProvider();
-    const result = await signInWithPopup(auth, provider);
-    const user = result.user;
-
-    const userProfile = await userDbService.getUser(user.uid);
-
-    if (!userProfile) {
-      await signOut(auth);
-      const error = new Error("No account found with this Google account. Please sign up first.");
-      error.name = 'auth/user-not-found';
-      throw error;
-    }
-
-    return { user, isNewUser: false };
+    return { user: { uid: 'mock-google-uid' }, isNewUser: false };
   },
 
   updateProfile: async (uid: string, data: Partial<UserProfileData>) => {
-    const user = auth.currentUser;
-    if (!user || user.uid !== uid) throw new Error("User not authenticated.");
-
-    const authUpdates: { displayName?: string, photoURL?: string | null } = {};
-    if (data.name) {
-      authUpdates.displayName = data.name;
-    }
-    if (data.avatar !== undefined) {
-      authUpdates.photoURL = data.avatar;
-    }
-
-    if (Object.keys(authUpdates).length > 0) {
-      await updateFirebaseAuthProfile(user, authUpdates as { displayName?: string, photoURL?: string });
-    }
-
     await userDbService.updateUser(uid, data);
     return await userDbService.getUser(uid);
   },
 
   deleteAccount: async (uid: string) => {
-    const user = auth.currentUser;
-    if (!user || user.uid !== uid) throw new Error("Authentication error.");
-
-    const userDbRef = ref(db, `users/${uid}`);
-    await remove(userDbRef);
-
-    await deleteUser(user);
+    const users = getStorageItem('infralith_users') || {};
+    delete users[uid];
+    setStorageItem('infralith_users', users);
   },
+
   logout: async () => {
-    await signOut(auth);
     if (typeof window !== 'undefined') {
       localStorage.removeItem(LS_KEYS.resume);
     }
   },
 
   cancelSignUpAndDeleteAuthUser: async () => {
-    const user = auth.currentUser;
-    if (user) {
-      try {
-        await deleteUser(user);
-      } catch (error) {
-        console.error("Error deleting temporary auth user:", error);
-        await signOut(auth);
-      }
-    }
+    // Placeholder
   }
-};
-
-// --- NEWS SERVICE ---
-export const newsService = {
-  fetchTrending: async () => {
-    await sleep(400);
-    return [
-      {
-        title: 'Remote Work is Here to Stay: Why',
-        description: 'Exploring the lasting impact of remote work on the global job market and company culture.',
-        url: '#', imageUrl: 'https://picsum.photos/400/250', 'data-ai-hint': 'remote work',
-      },
-      {
-        title: 'AI In Healthcare: The Next Frontier',
-        description: 'How artificial intelligence is revolutionizing patient diagnostics, treatment plans, and drug discovery.',
-        url: '#', imageUrl: 'https://picsum.photos/400/251', 'data-ai-hint': 'ai healthcare',
-      },
-    ];
-  },
-};
-
-// --- RESUME SERVICE ---
-export const resumeService = {
-  saveText: (text: string) => {
-    if (typeof window !== 'undefined') localStorage.setItem(LS_KEYS.resume, text || '');
-  },
-  getText: () => {
-    if (typeof window === 'undefined') return '';
-    return localStorage.getItem(LS_KEYS.resume) || '';
-  },
-  hasResume: () => {
-    if (typeof window === 'undefined') return false;
-    return Boolean(localStorage.getItem(LS_KEYS.resume));
-  },
 };
 
 // --- CHAT HISTORY ---
@@ -304,243 +191,271 @@ export type ChatSession = {
 
 export const chatHistoryService = {
   saveChatSession: async (userId: string, messages: Message[], existingId: string | null) => {
-    if (!userId || messages.length <= 1) return { sessionId: existingId };
-    let sessionId = existingId;
+    const chats = getStorageItem(`chats_${userId}`) || {};
+    let sessionId = existingId || `chat_${Date.now()}`;
+
     const generateTitle = (msgs: Message[]) => msgs.find(m => m.role === 'user')?.text.split(' ').slice(0, 5).join(' ') + '...' || 'New Chat';
-    if (sessionId) {
-      await update(ref(db, `users/${userId}/chats/${sessionId}`), { messages, timestamp: serverTimestamp() });
-    } else {
-      const newSessionRef = push(ref(db, `users/${userId}/chats`));
-      sessionId = newSessionRef.key;
-      if (!sessionId) throw new Error("Failed to create new chat session.");
-      await set(newSessionRef, { title: generateTitle(messages), timestamp: serverTimestamp(), messages });
-    }
+
+    chats[sessionId] = {
+      id: sessionId,
+      title: existingId ? chats[sessionId]?.title : generateTitle(messages),
+      timestamp: Date.now(),
+      messages
+    };
+
+    setStorageItem(`chats_${userId}`, chats);
     return { sessionId };
   }
 };
 
-// --- EVALUATIONS ---
-export const evaluationService = {
-  saveRankResult: async (userId: string, data: { jobRole: string; field: string; result: RankResumeOutput }) => {
-    const newEvalRef = push(ref(db, `users/${userId}/resumeEvaluations`));
-    await set(newEvalRef, { type: 'rank', ...data, createdAt: serverTimestamp() });
-  },
-  saveRoastResult: async (userId: string, data: { jobRole: string; field: string; result: RoastResumeOutput }) => {
-    const newEvalRef = push(ref(db, `users/${userId}/resumeEvaluations`));
-    await set(newEvalRef, { type: 'roast', ...data, createdAt: serverTimestamp() });
-  },
-  saveInterview: async (userId: string, data: { jobRole: string; field: string; difficulty: string; evaluation: InterviewEvaluation, history: any[] }) => {
-    const newInterviewRef = push(ref(db, `users/${userId}/mockInterviews`));
-    await set(newInterviewRef, { ...data, createdAt: serverTimestamp() });
-  },
-  saveSkillAssessment: async (userId: string, analysis: { scores: any; chosenRole: string; roadmap: any; }) => {
-    const newAssessmentRef = push(ref(db, `users/${userId}/skillAssessments`));
-    await set(newAssessmentRef, { ...analysis, createdAt: serverTimestamp() });
-  },
-  getEvaluations: async (userId: string) => {
-    const snapshot = await get(ref(db, `users/${userId}`));
-    if (!snapshot.exists()) return { skillAssessments: [], resumeReviews: [], mockInterviews: [] };
-    const data = snapshot.val();
-    const formatData = (obj: any) => obj ? Object.values(obj).sort((a: any, b: any) => (b as any).createdAt - a.createdAt) : [];
-    return {
-      skillAssessments: formatData(data.skillAssessments),
-      resumeReviews: formatData(data.resumeEvaluations),
-      mockInterviews: formatData(data.mockInterviews),
-    };
-  }
-};
 
 // --- INFRALITH INTELLIGENCE SERVICE ---
 export const infralithService = {
   saveEvaluation: async (userId: string, result: WorkflowResult) => {
-    const newEvalRef = push(ref(db, `users/${userId}/infralithEvaluations`));
-    await set(newEvalRef, { ...result, createdAt: serverTimestamp() });
+    const evals = getStorageItem(`evaluations_${userId}`) || [];
+    evals.push({ ...result, id: `eval_${Date.now()}`, createdAt: new Date().toISOString() });
+    setStorageItem(`evaluations_${userId}`, evals);
   },
   getEvaluations: async (userId: string): Promise<WorkflowResult[]> => {
-    const snapshot = await get(ref(db, `users/${userId}/infralithEvaluations`));
-    if (!snapshot.exists()) return [];
-    return Object.values(snapshot.val()).sort((a: any, b: any) =>
-      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-    ) as WorkflowResult[];
+    const evals = getStorageItem(`evaluations_${userId}`) || [];
+    return evals.sort((a: any, b: any) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
   }
 };
 
 // --- COMMUNITY POST SERVICE ---
 export const postService = {
   createPost: async (userId: string, authorName: string, authorAvatar: string, email: string, content: string, image: string | null) => {
-    const newPostRef = push(ref(db, 'posts'));
-    const postData = {
+    const posts = getStorageItem('infralith_posts') || [];
+    const newPost = {
+      id: `post_${Date.now()}`,
       authorId: userId,
       authorName,
       authorHandle: email.split('@')[0],
       authorAvatar: authorAvatar || '',
       content,
       image,
-      timestamp: serverTimestamp(),
+      timestamp: Date.now(),
       likeCount: 0,
       commentCount: 0,
-      shares: 0
+      shares: 0,
+      likes: {}
     };
-    await set(newPostRef, postData);
-    return newPostRef.key;
+    posts.unshift(newPost);
+    setStorageItem('infralith_posts', posts);
+    return newPost.id;
   },
 
-  // --- DELETE POST ---
   deletePost: async (postId: string) => {
-    // 1. Remove the post itself
-    await remove(ref(db, `posts/${postId}`));
-    // 2. Remove associated comments
-    await remove(ref(db, `comments/${postId}`));
+    const posts = getStorageItem('infralith_posts') || [];
+    const filtered = posts.filter((p: any) => p.id !== postId);
+    setStorageItem('infralith_posts', filtered);
   },
 
   getAllPosts: async () => {
-    const recentPostsQuery = query(ref(db, 'posts'), limitToLast(50));
-    const snapshot = await get(recentPostsQuery);
-
-    if (snapshot.exists()) {
-      const data = snapshot.val();
-      return Object.keys(data).map(key => ({
-        id: key,
-        ...data[key]
-      })).sort((a, b) => b.timestamp - a.timestamp);
-    }
-    return [];
+    return getStorageItem('infralith_posts') || [];
   },
 
   toggleLike: async (postId: string, userId: string) => {
-    const postRef = ref(db, `posts/${postId}`);
-    const snapshot = await get(postRef);
-
-    if (snapshot.exists()) {
-      const post = snapshot.val();
-      const likes = post.likes || {};
-      const isLiked = !!likes[userId];
-
-      const updates: any = {};
-      if (isLiked) {
-        updates[`likes/${userId}`] = null;
-        updates['likeCount'] = Math.max(0, (post.likeCount || 1) - 1);
+    const posts = getStorageItem('infralith_posts') || [];
+    const post = posts.find((p: any) => p.id === postId);
+    if (post) {
+      post.likes = post.likes || {};
+      if (post.likes[userId]) {
+        delete post.likes[userId];
+        post.likeCount = Math.max(0, post.likeCount - 1);
       } else {
-        updates[`likes/${userId}`] = true;
-        updates['likeCount'] = (post.likeCount || 0) + 1;
+        post.likes[userId] = true;
+        post.likeCount += 1;
       }
-
-      await update(postRef, updates);
+      setStorageItem('infralith_posts', posts);
     }
   },
 
   addComment: async (postId: string, userId: string, authorName: string, authorAvatar: string, text: string) => {
-    // 1. Add the comment
-    const commentRef = push(ref(db, `comments/${postId}`));
-    await set(commentRef, {
+    const comments = getStorageItem(`comments_${postId}`) || [];
+    const newComment = {
+      id: `comment_${Date.now()}`,
       authorId: userId,
       authorName,
       authorAvatar,
       text,
-      timestamp: serverTimestamp(),
-    });
+      timestamp: Date.now(),
+    };
+    comments.push(newComment);
+    setStorageItem(`comments_${postId}`, comments);
 
-    // 2. Increment counter
-    const postRef = ref(db, `posts/${postId}/commentCount`);
-    await runTransaction(postRef, (currentCount) => {
-      return (currentCount || 0) + 1;
-    });
-
-    return commentRef.key;
+    // Update post count
+    const posts = getStorageItem('infralith_posts') || [];
+    const post = posts.find((p: any) => p.id === postId);
+    if (post) {
+      post.commentCount += 1;
+      setStorageItem('infralith_posts', posts);
+    }
+    return newComment.id;
   },
 
   getComments: async (postId: string) => {
-    const commentsRef = ref(db, `comments/${postId}`);
-    const snapshot = await get(commentsRef);
-    if (snapshot.exists()) {
-      const data = snapshot.val();
-      return Object.keys(data).map(key => ({
-        id: key,
-        ...data[key]
-      })).sort((a, b) => a.timestamp - b.timestamp);
-    }
-    return [];
+    return getStorageItem(`comments_${postId}`) || [];
   }
 };
 
 // --- DM SERVICE ---
 export const dmService = {
-  // 1. Get a unique Chat ID between two users
   getChatId: (uid1: string, uid2: string) => {
     return [uid1, uid2].sort().join('_');
   },
 
-  // 2. Send a Message
-  sendMessage: async (currentUserId: string, otherUserId: string, otherUserName: string, otherUserAvatar: string, currentUserName: string, currentUserAvatar: string, text: string) => {
-    const chatId = dmService.getChatId(currentUserId, otherUserId);
-    const timestamp = Date.now();
+  sendMessage: async (currentUserId: string, otherUserId: string, otherUserName: string, otherUserAvatar: string, currentUserName: string, currentUserAvatar: string, text: string, imageUrl?: string | null) => {
+    const isGroup = otherUserId.startsWith('group_');
+    const chatId = isGroup ? otherUserId : dmService.getChatId(currentUserId, otherUserId);
+    const messages = getStorageItem(`dm_messages_${chatId}`) || [];
 
-    // A. Push message to the chat history
-    const messageRef = push(ref(db, `chats/${chatId}/messages`));
-    await set(messageRef, {
+    messages.push({
+      id: `msg_${Date.now()}`,
       senderId: currentUserId,
       text,
-      timestamp
+      imageUrl,
+      timestamp: Date.now()
     });
+    setStorageItem(`dm_messages_${chatId}`, messages);
 
-    // B. Update metadata for Current User's Inbox (Sender always accepts their own chat)
-    const currentUserChatRef = ref(db, `user-chats/${currentUserId}/${chatId}`);
-    await update(currentUserChatRef, {
-      chatId,
-      otherUserId,
-      otherUserName,
-      otherUserAvatar: otherUserAvatar || '',
-      lastMessage: text,
-      timestamp,
-      status: 'accepted'
-    });
+    // Update inboxes
+    if (isGroup) {
+      const inboxEntry = (getStorageItem(`inbox_${currentUserId}`) || {})[chatId];
+      if (inboxEntry && inboxEntry.participantIds) {
+        inboxEntry.participantIds.forEach((pid: string) => {
+          const userInbox = getStorageItem(`inbox_${pid}`) || {};
+          if (userInbox[chatId]) {
+            userInbox[chatId].lastMessage = text;
+            userInbox[chatId].timestamp = Date.now();
+            setStorageItem(`inbox_${pid}`, userInbox);
+          }
+        });
+      }
+    } else {
+      const updateInbox = (userId: string, otherId: string, otherName: string, otherAvatar: string, status: string) => {
+        const inbox = getStorageItem(`inbox_${userId}`) || {};
+        inbox[chatId] = {
+          chatId,
+          otherUserId: otherId,
+          otherUserName: otherName,
+          otherUserAvatar: otherAvatar,
+          lastMessage: text,
+          timestamp: Date.now(),
+          status
+        };
+        setStorageItem(`inbox_${userId}`, inbox);
+      };
 
-    // C. Update metadata for Other User's Inbox (Recipient)
-    const otherUserChatRef = ref(db, `user-chats/${otherUserId}/${chatId}`);
+      updateInbox(currentUserId, otherUserId, otherUserName, otherUserAvatar, 'accepted');
+      const otherInbox = getStorageItem(`inbox_${otherUserId}`) || {};
+      const existingStatus = otherInbox[chatId]?.status || 'pending';
+      updateInbox(otherUserId, currentUserId, currentUserName, currentUserAvatar, existingStatus);
+    }
+  },
 
-    // Check if this chat already exists for the recipient
-    const snapshot = await get(otherUserChatRef);
-    const updates: any = {
-      chatId,
-      otherUserId: currentUserId,
-      otherUserName: currentUserName,
-      otherUserAvatar: currentUserAvatar || '',
-      lastMessage: text,
-      timestamp
+  deleteMessage: async (chatId: string, messageId: string) => {
+    const messages = getStorageItem(`dm_messages_${chatId}`) || [];
+    const filtered = messages.filter((m: any) => m.id !== messageId);
+    setStorageItem(`dm_messages_${chatId}`, filtered);
+  },
+
+  getUserChatsRef: (userId: string) => {
+    // This method returns the key for local storage inbox
+    return `inbox_${userId}`;
+  },
+
+  getMessagesRef: (chatId: string) => {
+    return `dm_messages_${chatId}`;
+  },
+
+  acceptChatRequest: async (userId: string, chatId: string) => {
+    const inbox = getStorageItem(`inbox_${userId}`) || {};
+    if (inbox[chatId]) {
+      inbox[chatId].status = 'accepted';
+      setStorageItem(`inbox_${userId}`, inbox);
+    }
+  },
+
+  removeChat: async (userId: string, chatId: string) => {
+    const inbox = getStorageItem(`inbox_${userId}`) || {};
+    delete inbox[chatId];
+    setStorageItem(`inbox_${userId}`, inbox);
+  },
+
+  createGroup: async (creatorId: string, creatorName: string, creatorAvatar: string, groupName: string, participantIds: string[]) => {
+    const chatId = `group_${Date.now()}`;
+    const allParticipantIds = [...new Set([creatorId, ...participantIds])];
+
+    const updateInbox = (userId: string) => {
+      const inbox = getStorageItem(`inbox_${userId}`) || {};
+      inbox[chatId] = {
+        chatId,
+        otherUserId: chatId, // For groups, we use the chatId as the "otherId"
+        otherUserName: groupName,
+        otherUserAvatar: '', // Or a group icon
+        isGroup: true,
+        participantIds: allParticipantIds,
+        lastMessage: 'Group created',
+        timestamp: Date.now(),
+        status: 'accepted'
+      };
+      setStorageItem(`inbox_${userId}`, inbox);
     };
 
-    // If the chat does NOT exist for the recipient, mark it as a pending request
-    // If it exists, we DO NOT overwrite the status (it stays 'accepted' if they accepted)
-    if (!snapshot.exists()) {
-      updates.status = 'pending';
+    allParticipantIds.forEach(id => updateInbox(id));
+
+    // Save initial system message
+    const messages = [];
+    messages.push({
+      id: `msg_${Date.now()}`,
+      senderId: 'system',
+      text: `${creatorName} created group "${groupName}"`,
+      timestamp: Date.now()
+    });
+    setStorageItem(`dm_messages_${chatId}`, messages);
+
+    return chatId;
+  },
+
+  seedMockDMs: async (userId: string) => {
+    const sarahId = 'sarah-chen-id';
+    const marcusId = 'marcus-thorne-id';
+
+    // Seed Users if they don't exist
+    const users = getStorageItem('infralith_users') || {};
+    if (!users[sarahId]) {
+      users[sarahId] = { uid: sarahId, name: 'Dr. Sarah Chen', email: 'sarah@infralith.com', avatar: '', role: 'Engineer' };
     }
+    if (!users[marcusId]) {
+      users[marcusId] = { uid: marcusId, name: 'Marcus Thorne', email: 'marcus@infralith.com', avatar: '', role: 'Supervisor' };
+    }
+    setStorageItem('infralith_users', users);
 
-    await update(otherUserChatRef, updates);
-  },
+    // Sarah's Message
+    await dmService.sendMessage(
+      sarahId, userId, 'Your Name', '', 'Dr. Sarah Chen', '',
+      "Hey, did you check the seismic reinforcement on Section B-B? The Mumbai Phase 1 blueprint seems a bit thin there."
+    );
 
-  // --- DELETE MESSAGE ---
-  deleteMessage: async (chatId: string, messageId: string) => {
-    await remove(ref(db, `chats/${chatId}/messages/${messageId}`));
-  },
+    // Marcus's Message
+    await dmService.sendMessage(
+      marcusId, userId, 'Your Name', '', 'Marcus Thorne', '',
+      "The regional audit is coming up on Tuesday. Please ensure all your compliance reports are synced to the Azure Foundry gateway."
+    );
+  }
+};
 
-  // 3. Get list of chats (Inbox)
-  getUserChatsRef: (userId: string) => {
-    return ref(db, `user-chats/${userId}`);
-  },
+// --- ADDITIONAL SERVICE MOCKS ---
+export const resumeService = {
+  saveText: (text: string) => localStorage.setItem('resume_text', text),
+  getText: () => localStorage.getItem('resume_text') || '',
+};
 
-  // 4. Get messages for specific chat
-  getMessagesRef: (chatId: string) => {
-    return ref(db, `chats/${chatId}/messages`);
-  },
-
-  // 5. Accept a chat request
-  acceptChatRequest: async (userId: string, chatId: string) => {
-    const chatRef = ref(db, `user-chats/${userId}/${chatId}`);
-    await update(chatRef, { status: 'accepted' });
-  },
-
-  // 6. Remove chat (Decline or Delete)
-  removeChat: async (userId: string, chatId: string) => {
-    await remove(ref(db, `user-chats/${userId}/${chatId}`));
+export const evaluationService = {
+  getEvaluations: async (userId: string) => {
+    return getStorageItem(`evaluations_${userId}`) || { skillAssessments: [], resumeReviews: [], mockInterviews: [] };
   }
 };

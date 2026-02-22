@@ -31,14 +31,14 @@ export default function CostPrediction() {
     const metrics = [
         {
             title: 'Material Cost',
-            val: costData ? formatCurrency(costData.breakdown.find(b => b.category === 'Materials')?.cost || 0) : '$1.2M',
+            val: costData ? formatCurrency(costData.breakdown.find((b: any) => b.category === 'Materials')?.cost || 0) : '$1.2M',
             icon: Building,
             trend: '+5%',
             color: 'text-blue-500'
         },
         {
             title: 'Labor Cost',
-            val: costData ? formatCurrency(costData.breakdown.find(b => b.category.includes('Labor'))?.cost || 0) : '$850k',
+            val: costData ? formatCurrency(costData.breakdown.find((b: any) => b.category.includes('Labor'))?.cost || 0) : '$850k',
             icon: Users,
             trend: '-2%',
             color: 'text-green-500'
@@ -60,44 +60,46 @@ export default function CostPrediction() {
     ];
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col gap-1">
-                <h1 className="text-3xl font-bold tracking-tight font-headline">Project Cost Prediction</h1>
-                <p className="text-muted-foreground text-sm">
-                    <span className="text-primary font-medium">Azure Machine Learning</span> forecast based on real-time market material rates.
-                </p>
+        <div className="space-y-6 max-w-7xl mx-auto">
+            <div className="flex flex-col gap-2">
+                <h1 className="text-4xl font-black tracking-tight"><span className="text-gradient">Project Cost</span> Prediction</h1>
+                <CardDescription className="text-sm font-medium mt-1">
+                    Algorithmic forecast based on real-time market material rates.
+                </CardDescription>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {metrics.map((item, idx) => (
-                    <Card key={idx} className="bg-card/20 backdrop-blur-md border-white/5 relative overflow-hidden">
-                        <div className={cn("absolute top-0 right-0 p-4 opacity-10", item.color)}>
-                            <item.icon className="h-12 w-12" />
+                    <Card key={idx} className="premium-glass premium-glass-hover relative overflow-hidden group">
+                        <div className={cn("absolute top-0 right-0 p-4 opacity-5 pointer-events-none group-hover:opacity-20 transition-all group-hover:scale-110", item.color)}>
+                            <item.icon className="h-20 w-20 transform -translate-y-4 translate-x-4" />
                         </div>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-xs font-bold uppercase tracking-wider opacity-60">{item.title}</CardTitle>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
+                            <CardTitle className="text-xs font-bold uppercase tracking-wider opacity-60 flex items-center gap-2">
+                                <item.icon className="h-4 w-4" /> {item.title}
+                            </CardTitle>
                         </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold tracking-tight">{item.val}</div>
-                            <div className="flex items-center gap-1.5 mt-1">
+                        <CardContent className="relative z-10">
+                            <div className="text-3xl font-bold tracking-tight">{item.val}</div>
+                            <div className="flex items-center gap-1.5 mt-2">
                                 <Badge variant="outline" className={cn(
-                                    "text-[10px] py-0 px-1.5 border-none bg-primary/5",
-                                    item.trend.startsWith('+') ? "text-red-400" : item.trend.startsWith('-') ? "text-green-400" : "text-blue-400"
+                                    "text-[10px] py-0 px-2 border-none font-bold tracking-wider",
+                                    item.trend.startsWith('+') ? "bg-red-500/10 text-red-500" : item.trend.startsWith('-') ? "bg-green-500/10 text-green-500" : "bg-blue-500/10 text-blue-500"
                                 )}>
                                     {item.trend}
                                 </Badge>
-                                <span className="text-[10px] text-muted-foreground">vs. last month</span>
+                                <span className="text-[10px] text-muted-foreground uppercase opacity-70">vs. last month</span>
                             </div>
                         </CardContent>
                     </Card>
                 ))}
             </div>
 
-            <Card className="bg-card/20 backdrop-blur-md border-white/5">
-                <CardHeader className="flex flex-row items-center justify-between">
+            <Card className="premium-glass premium-glass-hover relative overflow-hidden group">
+                <CardHeader className="flex flex-row items-center justify-between mb-4 border-b border-primary/10 pb-4">
                     <div>
-                        <CardTitle className="text-lg">Expenditure Forecast</CardTitle>
-                        <CardDescription className="text-xs">Projected monthly operational burn rate.</CardDescription>
+                        <CardTitle className="text-xl font-bold flex items-center gap-2">Expenditure Forecast</CardTitle>
+                        <CardDescription className="text-xs mt-1 font-medium">Projected monthly operational burn rate across all sites.</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -156,33 +158,6 @@ export default function CostPrediction() {
                     </div>
                 </CardContent>
             </Card>
-
-            <div className="grid gap-4 md:grid-cols-2">
-                <Card className="bg-primary/5 border-primary/10">
-                    <CardHeader className="py-4">
-                        <CardTitle className="text-sm font-bold flex items-center gap-2">
-                            <TrendingUp className="h-4 w-4 text-primary" /> Market Insight
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pb-4">
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                            Steel prices are projected to rise by <span className="text-foreground font-semibold">12%</span> in the next quarter due to supply chain constraints. We recommend front-loading material procurement to lock in current rates.
-                        </p>
-                    </CardContent>
-                </Card>
-                <Card className="bg-primary/5 border-primary/10">
-                    <CardHeader className="py-4">
-                        <CardTitle className="text-sm font-bold flex items-center gap-2">
-                            <Wallet className="h-4 w-4 text-primary" /> Budget Optimization
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pb-4">
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                            AI analysis suggests a <span className="text-foreground font-semibold">{(costData?.totalEstimatedCost || 1500000) * 0.03}</span> saving potential by optimizing heavy machinery lease schedules during the structural phase.
-                        </p>
-                    </CardContent>
-                </Card>
-            </div>
         </div>
     );
 }

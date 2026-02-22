@@ -1,61 +1,50 @@
-
 'use server';
 
-import { ParsedBlueprint } from './blueprint-parser';
 import { generateAzureObject } from '@/ai/azure-ai';
 
-export interface CostEstimate {
-    totalEstimatedCost: number;
-    currency: string;
-    breakdown: {
-        category: string;
-        cost: number;
-        percentage: number;
-    }[];
-    confidenceScore: number;
-}
-
-export async function predictCost(data: ParsedBlueprint): Promise<CostEstimate> {
+/**
+ * Cost Prediction Agent — estimates budget based on material quantities and market rates
+ */
+export async function predictCost(inputData: string) {
     const prompt = `
-        As a Construction Cost Estimation Agent powered by Microsoft Azure OpenAI, predict the total cost and breakdown for the following project:
+        Act as a Construction Financial Strategist. 
+        Generate a high-fidelity Capital Expenditure (CAPEX) estimate for the following project.
         
-        Project: ${data.projectScope}
-        Specs: ${data.structuralDetails.floors} floors, ${data.structuralDetails.height}m height, ${data.structuralDetails.totalArea}sqm area.
-        Materials List: ${JSON.stringify(data.materials)}
+        DATA SOURCE:
+        ${inputData}
 
-        Apply current market rates (use INR as currency). 
-        Provide a total estimated cost and a breakdown by category (Materials, Labor, Machinery, Logistics, Contingency).
-        
-        Ensure the sum of breakdown costs equals the totalEstimatedCost.
-        
-        Return JSON in this format:
+        Requirements:
+        1. Calculate total project cost based on CURRENT localized market rates for India.
+        2. Provide a granular breakdown: Materials, Logistics, Labor, and Contingency (15%).
+        3. Estimate project duration and critical path milestones.
+
+        Return JSON:
         {
-          "totalEstimatedCost": number,
+          "total": number,
           "currency": "INR",
-          "breakdown": [{"category": "string", "cost": number, "percentage": number}],
-          "confidenceScore": number (0 to 1)
+          "breakdown": [
+            { "category": "String", "amount": number, "percentage": number }
+          ],
+          "duration": "Timeline string",
+          "confidenceScore": number (0-1)
         }
     `;
 
     try {
-        return await generateAzureObject<CostEstimate>(prompt);
-    } catch (error) {
-        console.error("Cost Prediction Agent Error (Azure):", error);
-        // Fallback
-        const materialCost = data.materials.reduce((acc, m) => {
-            let pricePerUnit = m.item.includes("Steel") ? 68000 : 5000;
-            return acc + (m.quantity * pricePerUnit);
-        }, 0);
-        const total = materialCost * 1.6;
+        const result = await generateAzureObject<any>(prompt);
         return {
-            totalEstimatedCost: Math.round(total),
-            currency: "INR",
-            breakdown: [
-                { category: "Materials", cost: Math.round(materialCost), percentage: 60 },
-                { category: "Labor", cost: Math.round(materialCost * 0.4), percentage: 25 },
-                { category: "Others", cost: Math.round(total - (materialCost * 1.4)), percentage: 15 }
-            ],
-            confidenceScore: 0.5
+            total: result?.total || result?.totalEstimatedCost || 0,
+            currency: result?.currency || 'INR',
+            breakdown: (result?.breakdown || []).map((b: any) => ({
+                category: b?.category || 'General Works',
+                amount: b?.amount || 0,
+                percentage: b?.percentage || 0
+            })),
+            duration: result?.duration || '18-24 months',
+            confidenceScore: result?.confidenceScore || 0.85
         };
+    } catch (error) {
+        console.error("Cost Prediction Error:", error);
+        throw error;
     }
 }

@@ -35,12 +35,6 @@ export async function runDevOpsAgent(data: WorkflowResult): Promise<DevOpsInsigh
         return await generateAzureObject<DevOpsInsight>(prompt);
     } catch (error) {
         console.error("DevOps Agent Error:", error);
-        return {
-            pipelineStatus: 'Optimized',
-            automatedActions: [
-                { action: 'Sync Blueprint with Azure Storage', target: 'DevOps Pipeline', priority: 'P2' }
-            ],
-            gitOpsStatus: 'Infrastructure-as-Code (IaC) is synchronized with blueprint version 1.0.4'
-        };
+        throw new Error("Azure OpenAI DevOps Agent failed. Verify API configurations.");
     }
 }

@@ -20,7 +20,7 @@ export default function Sidebar({ collapsed }: { collapsed: boolean }) {
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          'border-r border-white/10 bg-card/50 backdrop-blur-lg',
+          'border-r premium-glass border-l-0 border-y-0 rounded-none shadow-[8px_0_32px_0_var(--glass-shadow)]',
           'transition-all duration-300 ease-in-out',
           collapsed ? 'w-20' : 'w-64',
           'hidden md:flex flex-col z-20'

@@ -4,15 +4,17 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Activity, CheckCircle, Database, ShieldAlert, Cpu } from 'lucide-react';
+import { Database, ShieldCheck, Cpu, Network, FileSearch, Calculator, AlertTriangle, Layers, CheckCircle } from 'lucide-react';
 import { useAppContext } from '@/contexts/app-context';
 import { Button } from '@/components/ui/button';
 
 const stages = [
-    { title: 'Intelligence OCR', icon: Database, desc: 'Azure AI Document Intelligence extracting data from blueprints...', duration: 2500 },
-    { title: 'Regulatory Scan', icon: ShieldAlert, desc: 'Azure OpenAI (GPT-4o) verifying IS/IBC building code compliance...', duration: 3500 },
-    { title: 'Project Estimator', icon: Cpu, desc: 'Azure Machine Learning predictive cost and materials modeling...', duration: 2500 },
-    { title: 'Agentic DevOps Review', icon: Activity, desc: 'Reliability Agent suggesting CI/CD & maintenance automations...', duration: 4000 },
+    { title: 'API Gateway Orchestration', icon: Network, desc: 'Routing payload and initializing continuous workflow...', duration: 1500 },
+    { title: 'Document Parsing Agent', icon: FileSearch, desc: 'Extracting blueprints & storing structured data...', duration: 2500 },
+    { title: 'Cost Prediction Agent', icon: Calculator, desc: 'Algorithmic cost forecasting based on materials...', duration: 2000 },
+    { title: 'Risk Analysis Agent', icon: AlertTriangle, desc: 'Predicting failure patterns and structural risks...', duration: 2000 },
+    { title: 'Compliance Agent', icon: ShieldCheck, desc: 'Verifying data against ISO and regional codes...', duration: 2000 },
+    { title: 'Analytics Aggregator', icon: Layers, desc: 'Consolidating results to Database & Dashboard...', duration: 2500 },
 ];
 
 export default function PipelineStatus() {
@@ -38,17 +40,17 @@ export default function PipelineStatus() {
                     </div>
                     <h1 className="text-3xl font-black tracking-tight uppercase">AI FOUNDRY PIPELINE</h1>
                 </div>
-                <p className="text-muted-foreground font-mono text-sm tracking-widest">STOCKED STATUS: [ AZURE REVENUE ENGINE ACTIVE ]</p>
+                <p className="text-muted-foreground font-mono text-sm tracking-widest">SYSTEM STATUS: [ REGIONAL ENGINE ACTIVE ]</p>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {stages.map((stage, idx) => {
                     const isDone = completed.includes(idx);
                     const isCurrent = current === idx;
                     const Icon = stage.icon;
 
                     return (
-                        <Card key={idx} className={`relative overflow-hidden transition-all duration-500 bg-card/40 backdrop-blur-md border-2 ${isCurrent ? 'border-primary ring-4 ring-primary/10 scale-[1.02] shadow-2xl' : 'border-white/5 opacity-70'}`}>
+                        <Card key={idx} className={`premium-glass relative overflow-hidden transition-all duration-500 premium-glass-hover ${isCurrent ? 'border-primary ring-4 ring-primary/30 scale-[1.02] shadow-primary/40 shadow-2xl z-10' : 'opacity-50 hover:opacity-100'}`}>
                             <CardHeader className="pb-2">
                                 <div className="flex items-center justify-between mb-4">
                                     <div className={`p-3 rounded-xl ${isDone ? 'bg-green-500/20 text-green-500' : isCurrent ? 'bg-primary/20 text-primary animate-pulse' : 'bg-muted text-muted-foreground'}`}>
@@ -79,7 +81,7 @@ export default function PipelineStatus() {
                     </div>
                     <h3 className="text-3xl font-black uppercase mb-4 tracking-tighter text-center">INTELLIGENCE SYNC SUCCESS</h3>
                     <p className="text-muted-foreground text-center max-w-sm mb-8 font-medium">
-                        Deployment review and structural validation stored in Azure Cosmos DB. Reliability agents have prepared maintenance hooks.
+                        Deployment review and structural validation complete. Intelligence agents have established monitoring hooks.
                     </p>
                     <div className="flex gap-4">
                         <Button size="lg" className="h-14 px-10 bg-primary font-black uppercase tracking-widest shadow-xl shadow-primary/30" onClick={() => handleNavigate('compliance')}>

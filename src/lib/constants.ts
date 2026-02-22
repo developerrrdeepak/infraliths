@@ -1,4 +1,4 @@
-import { Home, LineChart, FileText, Upload, Settings, User, AlertTriangle, ShieldCheck, Coins, Gavel, ScanSearch, Workflow, FileUp, Users, MessageSquare } from 'lucide-react';
+import { Home, FileText, Upload, Settings, Gavel, Users, MessageSquare, Send, History, BarChart3, Box, Zap } from 'lucide-react';
 
 export const LS_KEYS = {
   token: 'infralith_token',
@@ -15,34 +15,27 @@ const mainNav = {
   label: '',
   items: [
     { key: 'home', label: 'Overview', icon: Home, auth: false },
-    { key: 'upload', label: 'Blueprint Upload', icon: Upload, auth: true, roles: ['Engineer', 'Admin'] },
+    { key: 'upload', label: 'Document Upload', icon: Upload, auth: true, roles: ['Engineer', 'Admin'] },
+    { key: 'blueprint3d', label: '2D to 3D AI Gen', icon: Box, auth: true, roles: ['Engineer', 'Admin'] },
+    { key: 'simulation', label: 'Smart Site Simulator', icon: Zap, auth: true, roles: ['Engineer', 'Admin'] },
+    { key: 'history', label: 'Document History', icon: History, auth: true, roles: ['Engineer', 'Supervisor', 'Admin'] },
   ],
 };
 
 const pipelineNav = {
   key: 'pipeline',
-  label: 'AI Processing',
+  label: 'AI Agents & Orchestration',
   items: [
-    { key: 'search', label: 'AI Search Index', icon: ScanSearch, auth: true },
+    { key: 'chat', label: 'Infralith Chat Agent', icon: MessageSquare, auth: true },
   ],
 };
 
-const communityNav = {
-  key: 'social',
+const communicationNav = {
+  key: 'communication',
   label: 'Communication',
   items: [
-    { key: 'community', label: 'Community', icon: Users, auth: true },
-    { key: 'chat', label: 'AI Career Chat', icon: MessageSquare, auth: true },
-  ],
-};
-
-const evaluationNav = {
-  key: 'evaluation',
-  label: 'Evaluation',
-  items: [
-    { key: 'compliance', label: 'Compliance', icon: ShieldCheck, auth: true },
-    { key: 'risk', label: 'Risk Analysis', icon: AlertTriangle, auth: true },
-    { key: 'cost', label: 'Cost Prediction', icon: Coins, auth: true },
+    { key: 'messages', label: 'Team Messages', icon: Send, auth: true },
+    { key: 'community', label: 'Global Community', icon: Users, auth: true },
   ],
 };
 
@@ -50,8 +43,9 @@ const decisionNav = {
   key: 'decision',
   label: 'Decision',
   items: [
-    { key: 'decision', label: 'Supervisor Panel', icon: Gavel, auth: true, roles: ['Supervisor', 'Admin'] },
+    { key: 'decision', label: 'Decision Hub', icon: Gavel, auth: true, roles: ['Engineer', 'Admin'] },
     { key: 'report', label: 'Final Report', icon: FileText, auth: true },
+    { key: 'analytics', label: 'Admin Analytics', icon: BarChart3, auth: true, roles: ['Admin'] },
   ],
 };
 
@@ -63,6 +57,6 @@ const accountNav = {
   ],
 };
 
-export const navGroups = [mainNav, pipelineNav, communityNav, evaluationNav, decisionNav, accountNav];
+export const navGroups = [mainNav, pipelineNav, communicationNav, decisionNav, accountNav];
 
-export const navItems = [...mainNav.items, ...pipelineNav.items, ...communityNav.items, ...evaluationNav.items, ...decisionNav.items, ...accountNav.items];
+export const navItems = [...mainNav.items, ...pipelineNav.items, ...communicationNav.items, ...decisionNav.items, ...accountNav.items];

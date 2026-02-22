@@ -17,7 +17,7 @@ export default function RiskView() {
     const { infralithResult } = useAppContext();
     const riskData = infralithResult?.risk;
 
-    const hazards = riskData?.hazards.map(h => ({
+    const hazards = riskData?.hazards.map((h: any) => ({
         title: h.type,
         severity: h.severity.toLowerCase(),
         score: Math.round(h.probability * 100),
@@ -33,16 +33,16 @@ export default function RiskView() {
     const isHighRisk = overallScore > 60;
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col gap-1">
-                <h1 className="text-3xl font-bold tracking-tight font-headline">Structural Risk Analysis</h1>
-                <p className="text-muted-foreground text-sm">
-                    <span className="text-primary font-medium">Powered by Azure OpenAI</span> — analyzing structural patterns.
+        <div className="space-y-6 max-w-7xl mx-auto">
+            <div className="flex flex-col gap-2">
+                <h1 className="text-4xl font-black tracking-tight"><span className="text-gradient">Structural Risk</span> Analysis</h1>
+                <p className="text-muted-foreground text-sm font-medium">
+                    <span className="text-primary font-bold">Advanced AI</span> — analyzing structural failure patterns.
                 </p>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
-                <Card className="bg-card/20 backdrop-blur-md border-white/5 relative overflow-hidden group">
+                <Card className="premium-glass premium-glass-hover relative overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 via-transparent to-transparent opacity-50" />
                     <CardHeader>
                         <CardTitle className={cn("flex items-center gap-2 text-lg", isHighRisk ? "text-red-500" : "text-green-500")}>
@@ -77,13 +77,13 @@ export default function RiskView() {
                     </CardContent>
                 </Card>
 
-                <Card className="bg-card/20 backdrop-blur-md border-white/5">
+                <Card className="premium-glass premium-glass-hover">
                     <CardHeader>
                         <CardTitle className="text-lg">Hazard Probabilities</CardTitle>
                         <CardDescription className="text-xs">AI-detected potential failure indicators.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        {hazards.map((risk, idx) => {
+                        {hazards.map((risk: any, idx: number) => {
                             const colors = getSeverityColor(risk.severity);
                             return (
                                 <div key={idx} className="space-y-1.5">
@@ -104,23 +104,6 @@ export default function RiskView() {
                     </CardContent>
                 </Card>
             </div>
-
-            <Card className="bg-primary/5 border-primary/10 overflow-hidden relative">
-                <div className="absolute inset-y-0 left-0 w-1 bg-primary" />
-                <CardContent className="p-4 flex gap-4">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                        <Zap className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="space-y-1">
-                        <h4 className="text-sm font-bold text-primary flex items-center gap-2">
-                            Infralith AI Insight
-                        </h4>
-                        <p className="text-xs text-muted-foreground leading-relaxed">
-                            <strong className="text-foreground">Analysis Result:</strong> {riskData?.aiInsight || "Evaluation in progress. AI agents are scanning for structural anomalies based on IS codes."}
-                        </p>
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     );
 }

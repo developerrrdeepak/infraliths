@@ -4,53 +4,85 @@
 
 @layer base {
   :root {
-    --background: 220 15% 96%;
+    --background: 210 40% 98%;
+    /* Light slate/concrete #f8fafc */
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 262 70% 50%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 38 92% 50%;
+    /* Construction Amber/Safety Orange */
+    --primary-foreground: 222.2 84% 4.9%;
+    /* Dark text on amber */
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 300 80% 50%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 38 92% 50%;
+    --accent-foreground: 222.2 84% 4.9%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 80%;
-    --ring: 262 82% 57%;
-    --radius: 0.5rem;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 38 92% 50%;
+    --radius: 1rem;
+
+    /* Glass Effect Variables (Light) */
+    --glass-bg: rgba(255, 255, 255, 0.75);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --glass-shadow: rgba(0, 0, 0, 0.06);
+    --glass-bg-hover: rgba(255, 255, 255, 0.95);
+    --glass-border-hover: rgba(245, 158, 11, 0.4);
+    --glass-shadow-hover: rgba(245, 158, 11, 0.25);
+
+    /* Structural Blueprint Grid & Floodlight (Light) */
+    --grid-major: rgba(0, 0, 0, 0.08);
+    --grid-minor: rgba(0, 0, 0, 0.03);
+    --floodlight: radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.12) 0%, transparent 60%);
+
+    --chart-1: 38 92% 50%;
+    --chart-2: 215 25% 27%;
+    --chart-3: 30 80% 65%;
+    --chart-4: 280 65% 70%;
+    --chart-5: 340 75% 65%;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
+    --background: 222.2 84% 4.9%;
+    /* Deep Slate #020617 */
     --foreground: 210 40% 98%;
-    --card: 224 71% 8%;
+    --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
-    --popover: 224 71% 4%;
+    --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 262 86% 68%;
-    --primary-foreground: 262 86% 98%;
-    --secondary: 215 28% 17%;
+    --primary: 38 92% 50%;
+    /* Construction Amber */
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 215 28% 17%;
+    --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-    --accent: 300 86% 68%;
-    --accent-foreground: 300 86% 98%;
+    --accent: 38 92% 50%;
+    --accent-foreground: 222.2 84% 4.9%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 215 28% 22%;
-    --input: 215 28% 25%;
-    --ring: 262 86% 78%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 38 92% 50%;
+
+    /* Glass Effect Variables (Dark) */
+    --glass-bg: rgba(15, 23, 42, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.06);
+    --glass-shadow: rgba(0, 0, 0, 0.36);
+    --glass-bg-hover: rgba(30, 41, 59, 0.7);
+    --glass-border-hover: rgba(245, 158, 11, 0.5);
+    --glass-shadow-hover: rgba(245, 158, 11, 0.25);
+
+    /* Structural Blueprint Grid & Floodlight (Dark) */
+    --grid-major: rgba(255, 255, 255, 0.06);
+    --grid-minor: rgba(255, 255, 255, 0.02);
+    --floodlight: radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.15) 0%, transparent 60%);
   }
 }
 
@@ -58,13 +90,40 @@
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased transition-colors duration-500;
+
+    /* Elegant Engineering Blueprint Grid with Ambient Floodlight */
+    background-image:
+      var(--floodlight),
+      linear-gradient(to right, var(--grid-major) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-major) 1px, transparent 1px),
+      linear-gradient(to right, var(--grid-minor) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-minor) 1px, transparent 1px);
+
+    background-size:
+      100% 100%,
+      /* Floodlight */
+      100px 100px,
+      /* Major X */
+      100px 100px,
+      /* Major Y */
+      20px 20px,
+      /* Minor X */
+      20px 20px;
+    /* Minor Y */
+
+    background-attachment: fixed;
+    min-height: 100vh;
   }
-  .dark body {
-    background-image: radial-gradient(ellipse 80% 80% at 50% -20%, hsl(var(--primary) / 0.15), transparent);
+
+  ::selection {
+    background-color: rgba(245, 158, 11, 0.4);
+    /* Amber */
+    color: white;
   }
-  
+
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus,
@@ -88,7 +147,7 @@
   }
 
   .interview-scrollbar::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
   }
 
   .interview-scrollbar::-webkit-scrollbar-track {
@@ -96,101 +155,114 @@
   }
 
   .interview-scrollbar::-webkit-scrollbar-thumb {
-    background-color: hsl(var(--muted-foreground) / 0.3);
+    background-color: rgba(156, 163, 175, 0.3);
+    /* slate gray */
     border-radius: 20px;
     border: 2px solid transparent;
     background-clip: content-box;
   }
 
   .interview-scrollbar::-webkit-scrollbar-thumb:hover {
-    background-color: hsl(var(--muted-foreground) / 0.5);
+    background-color: rgba(245, 158, 11, 0.6);
+    /* amber hover */
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-amber-500 via-orange-500 to-yellow-400;
   }
 }
 
-.page-loader-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  width: 100vw;
+/* Premium UI Classes (Construction Theme, Light/Dark reactive) */
+.premium-glass {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px 0 var(--glass-shadow);
+  /* Optional: faint diagonal hazard texture overlay inside the glass */
+  background-image: repeating-linear-gradient(45deg,
+      transparent,
+      transparent 10px,
+      rgba(255, 255, 255, 0.01) 10px,
+      rgba(255, 255, 255, 0.01) 20px);
+}
+
+.premium-glass-hover {
+  transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-glass-hover:hover {
+  transform: translateY(-4px);
+  background-color: var(--glass-bg-hover);
+  border-color: var(--glass-border-hover);
+  box-shadow: 0 16px 40px 0 var(--glass-shadow-hover);
+}
+
+.glass-card {
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px 0 var(--glass-shadow);
+}
+
+.bento-hover {
+  transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bento-hover:hover {
+  transform: translateY(-4px);
+  background-color: var(--glass-bg-hover);
+  border-color: var(--glass-border-hover);
+  box-shadow: 0 16px 40px 0 var(--glass-shadow-hover);
+}
+
+
+/* 
+ * Welding Sparks Background System 
+ * Mimics sparks falling across the application canvas 
+ */
+#stars-container {
   position: fixed;
   top: 0;
   left: 0;
-  background-color: hsl(var(--background));
-  z-index: 100;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
 }
 
-.loader {
-  width: 100px;
-  height: 100px;
-  transform: rotate(45deg);
-  display: flex;
-  flex-wrap: wrap;
+.spark {
+  position: absolute;
+  background-color: #f59e0b;
+  /* Safety Orange / Hot Amber */
+  border-radius: 50%;
+  width: 3px;
+  height: 3px;
+  /* Spark fall animation combining gravity drop and horizontal drift */
+  animation: fall var(--duration, 3s) cubic-bezier(0.25, 1, 0.5, 1) infinite;
+  box-shadow: 0 0 10px 3px rgba(245, 158, 11, 0.6);
+  opacity: 0;
 }
 
-#inbox1 {
-  width: 50px;
-  height: 50px;
-  background-color: hsl(var(--primary));
-  animation: magic 2.5s ease-in-out 0s infinite;
+@keyframes fall {
+  0% {
+    transform: translateY(-50px) translateX(0) scale(1.5);
+    opacity: 1;
+  }
+
+  80% {
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: translateY(100vh) translateX(var(--drift, 50px)) scale(0);
+    opacity: 0;
+  }
 }
 
-#inbox4 {
-  width: 50px;
-  height: 50px;
-  background-color: hsl(var(--primary));
-  align-self: flex-end;
-  animation: magic4 2.5s ease-in-out 0s infinite;
-}
-
-@keyframes magic {
-  0% { transform: translate(0px); }
-  25% { transform: translate(50px); }
-  50% { transform: translate(50px, 50px); }
-  75% { transform: translateY(50px); }
-  100% { transform: translate(0px); }
-}
-
-@keyframes magic4 {
-  0% { transform: translate(0px); }
-  25% { transform: translate(-50px); }
-  50% { transform: translate(-50px, -50px); }
-  75% { transform: translateY(-50px); }
-  100% { transform: translate(0px); }
-}
-
-#stars-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: -1;
-    overflow: hidden;
-}
-  
-.star {
-    position: absolute;
-    background-color: hsl(var(--primary) / 0.5);
-    border-radius: 50%;
-    width: 2px;
-    height: 2px;
-    animation-name: twinkle;
-    animation-iteration-count: infinite;
-    animation-timing-function: ease-in-out;
-}
-  
-@keyframes twinkle {
-    0%, 100% {
-      transform: scale(1);
-      opacity: 0.5;
-    }
-    50% {
-      transform: scale(1.5);
-      opacity: 1;
-    }
-}
-  
-.dark .star {
-    background-color: hsl(var(--primary) / 0.8);
+.dark .spark {
+  background-color: #fbbf24;
+  box-shadow: 0 0 16px 5px rgba(245, 158, 11, 0.8);
 }

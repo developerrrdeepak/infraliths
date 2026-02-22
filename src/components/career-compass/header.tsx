@@ -1,10 +1,11 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LogIn, LogOut, Menu, PanelLeftClose, PanelLeftOpen, User, UserPlus, Users } from 'lucide-react'; // Add User icon
+import { LogIn, LogOut, Menu, PanelLeftClose, PanelLeftOpen, User, UserPlus } from 'lucide-react';
 import LoginStatus from './login-status';
 import { useAppContext } from '@/contexts/app-context';
 import ThemeToggle from './theme-toggle';
+import NotificationBell from '@/components/infralith/NotificationBell';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,7 +34,7 @@ export default function Header({ onToggleDesktopSidebar, desktopSidebarCollapsed
   }
 
   return (
-    <header className="sticky top-0 z-40 flex items-center justify-between border-b border-white/10 bg-background/50 backdrop-blur-lg px-4 md:px-6 py-3 h-[69px]">
+    <header className="sticky top-0 z-40 flex items-center justify-between premium-glass border-x-0 border-t-0 rounded-none px-4 md:px-6 py-3 h-[72px] transition-all">
       <div className="flex items-center gap-3">
         {authed && (
           <>
@@ -65,12 +66,10 @@ export default function Header({ onToggleDesktopSidebar, desktopSidebarCollapsed
         </Badge>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <ThemeToggle />
         {authed && (
-          <Button variant="ghost" size="icon" onClick={() => handleNavigate('community')}>
-            <Users className="h-5 w-5" />
-          </Button>
+          <NotificationBell />
         )}
 
         {authed && user ? (

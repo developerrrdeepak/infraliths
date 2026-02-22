@@ -2,25 +2,28 @@
 
 import { useEffect, useState } from 'react';
 
-const STAR_COUNT = 50;
+const SPARK_COUNT = 30;
 
 export default function TwinklingStars() {
-  const [stars, setStars] = useState<any[]>([]);
+  const [sparks, setSparks] = useState<any[]>([]);
 
   useEffect(() => {
-    const generatedStars = Array.from({ length: STAR_COUNT }).map(() => ({
-      top: `${Math.random() * 100}%`,
-      left: `${Math.random() * 100}%`,
-      animationDuration: `${2 + Math.random() * 3}s`,
-      animationDelay: `${Math.random() * 5}s`,
-    }));
-    setStars(generatedStars);
+    const generatedSparks = Array.from({ length: SPARK_COUNT }).map(() => {
+      return {
+        left: `${Math.random() * 100}%`,
+        top: `${Math.random() * -20}%`, // Start above the viewport
+        '--drift': `${(Math.random() - 0.5) * 300}px`, // Random horizontal drift between -150px and +150px
+        '--duration': `${1.5 + Math.random() * 4}s`, // Varied animation duration for realism
+        animationDelay: `${Math.random() * 6}s`, // Varied stagger
+      };
+    });
+    setSparks(generatedSparks);
   }, []);
 
   return (
     <div id="stars-container">
-      {stars.map((style, index) => (
-        <div key={index} className="star" style={style} />
+      {sparks.map((style, index) => (
+        <div key={index} className="spark" style={style} />
       ))}
     </div>
   );

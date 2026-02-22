@@ -1,55 +1,47 @@
-
 'use server';
 
-import { ParsedBlueprint } from './blueprint-parser';
 import { generateAzureObject } from '@/ai/azure-ai';
 
-export interface RiskAnalysis {
-    riskIndex: number;
-    hazards: {
-        type: string;
-        probability: number;
-        severity: 'High' | 'Medium' | 'Low';
-        mitigation: string;
-    }[];
-    aiInsight: string;
-}
-
-export async function analyzeRisk(data: ParsedBlueprint): Promise<RiskAnalysis> {
+/**
+ * Risk Analysis Agent — identifies hazards and calculates Risk Index
+ */
+export async function analyzeRisk(inputData: string) {
     const prompt = `
-        As a Structural Risk Assessment Agent powered by Azure OpenAI, analyze the following project for potential hazards:
+        Act as a Predictive Safety Agent specialized in Infrastructure.
+        Analyze the following technical project data to identify catastrophic and operational risks.
         
-        Project: ${data.projectScope}
-        Specs: ${data.structuralDetails.floors} floors, ${data.structuralDetails.height}m height, ${data.structuralDetails.totalArea}sqm area, Seismic Zone: ${data.structuralDetails.seismicZone}.
-        Materials: ${JSON.stringify(data.materials)}
+        DATA SOURCE:
+        ${inputData}
 
-        Identify 3-5 specific structural risks (e.g., Seismic, Wind Load, Soil Settlement, Material Stress).
-        Provide a probability (0-1), a severity (High/Medium/Low), and a technical mitigation strategy for each.
-        Also, provide a composite Risk Index (0-100) and a high-level Azure AI Insight.
+        Assess:
+        1. Geotechnical and seismic vulnerability
+        2. Structural load distribution failure points
+        3. Operational site safety hazards
 
-        Return JSON in this format:
+        Return a JSON object:
         {
-          "riskIndex": number,
-          "hazards": [{"type": "string", "probability": number, "severity": "High" | "Medium" | "Low", "mitigation": "string"}],
-          "aiInsight": "string"
+          "riskIndex": number (0-100),
+          "level": "Low" | "Medium" | "High" | "Critical",
+          "hazards": [
+            { "type": "Category", "severity": "Level", "description": "Full detail", "mitigation": "Strategic solution" }
+          ]
         }
     `;
 
     try {
-        return await generateAzureObject<RiskAnalysis>(prompt);
-    } catch (error) {
-        console.error("Risk Analysis Agent Error (Azure):", error);
+        const result = await generateAzureObject<any>(prompt);
         return {
-            riskIndex: 45,
-            hazards: [
-                {
-                    type: "General Structural Stress",
-                    probability: 0.3,
-                    severity: "Medium",
-                    mitigation: "Ensure compliance with IS 456 standards for RCC structures via Azure Compliance Checker."
-                }
-            ],
-            aiInsight: "Primary Azure AI evaluation suggests a stable design, but detailed seismic calculations are recommended."
+            riskIndex: result?.riskIndex || 50,
+            level: result?.level || 'Medium',
+            hazards: (result?.hazards || []).map((h: any) => ({
+                type: h?.type || 'Environmental',
+                severity: h?.severity || 'Medium',
+                description: h?.description || 'Potential structural instability detected.',
+                mitigation: h?.mitigation || 'Conduct field stress tests immediately.'
+            }))
         };
+    } catch (error) {
+        console.error("Risk Analysis Error:", error);
+        throw error;
     }
 }

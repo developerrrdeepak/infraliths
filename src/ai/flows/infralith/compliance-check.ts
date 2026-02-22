@@ -1,53 +1,46 @@
-
 'use server';
 
-import { ParsedBlueprint } from './blueprint-parser';
 import { generateAzureObject } from '@/ai/azure-ai';
 
-export interface ComplianceReport {
-    overallStatus: 'Pass' | 'Fail' | 'Warning';
-    rules: {
-        ruleId: string;
-        description: string;
-        status: 'pass' | 'fail' | 'warn';
-        comment: string;
-    }[];
-}
-
-export async function checkCompliance(data: ParsedBlueprint): Promise<ComplianceReport> {
+/**
+ * Compliance Agent — verifies blueprint against Indian building codes
+ */
+export async function checkCompliance(inputData: string) {
     const prompt = `
-        As a Construction Compliance Agent powered by Azure OpenAI, verify the following project against International and Local Building Codes (IBC, IS Codes, NBC):
-        
-        Project: ${data.projectScope}
-        Specs: ${data.structuralDetails.floors} floors, ${data.structuralDetails.height}m height, ${data.structuralDetails.totalArea}sqm area.
-        Material Specs provided: ${data.materials.map(m => m.spec).join(", ")}.
+        As a Senior Structural Auditor, evaluate this construction project for compliance with:
+        1. Indian Standard 456:2000 (Plain and Reinforced Concrete)
+        2. National Building Code of India 2016 (NBC)
+        3. IS 13920 (Ductile Detailing for Seismic Zones)
 
-        Check specifically for:
-        1. Seismic Zone Compliance (Seismic Zone: ${data.structuralDetails.seismicZone})
-        2. Minimum Material Standards (IS 456, IS 1786)
-        3. Fire Safety and Zoning limits for a ${data.structuralDetails.height}m tall structure.
+        PROJECT CONTEXT:
+        ${inputData}
 
-        Return JSON in this format:
+        Perform a deep audit. Identify specific non-compliance issues regarding:
+        - Structural integrity and load paths
+        - Fire safety and occupancy limits
+        - Material specifications and seismic detailing
+
+        Return a precisely structured JSON:
         {
-          "overallStatus": "Pass" | "Fail" | "Warning",
-          "rules": [{"ruleId": "string", "description": "string", "status": "pass" | "fail" | "warn", "comment": "string"}]
+           "overallStatus": "Pass" | "Warning" | "Fail",
+           "violations": [
+             { "ruleId": "Standard Ref", "description": "Specific finding", "comment": "Engineer recommendation" }
+           ]
         }
     `;
 
     try {
-        return await generateAzureObject<ComplianceReport>(prompt);
-    } catch (error) {
-        console.error("Compliance Agent Error (Azure):", error);
+        const result = await generateAzureObject<any>(prompt);
         return {
-            overallStatus: "Warning",
-            rules: [
-                {
-                    ruleId: "IS 456:2000",
-                    description: "Plain and Reinforced Concrete Code of Practice",
-                    status: "warn",
-                    comment: "Material specs for M30 concrete verified, but mix design report is missing from the Azure upload."
-                }
-            ]
+            overallStatus: result?.overallStatus || 'Warning',
+            violations: (result?.violations || []).map((v: any) => ({
+                ruleId: v?.ruleId || 'IS-GENERAL',
+                description: v?.description || 'Structural check required',
+                comment: v?.comment || 'Audit pending final review'
+            }))
         };
+    } catch (error) {
+        console.error("Compliance Check Error:", error);
+        throw error;
     }
 }

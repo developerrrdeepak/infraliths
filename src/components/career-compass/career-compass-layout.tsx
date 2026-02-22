@@ -11,10 +11,9 @@ import TwinklingStars from './twinkling-stars';
 import Footer from './footer';
 import ProfilePage from './profile-page';
 import SettingsPage from './settings-page';
-import CommunityPage from './community-page';
 import ChatPage from './chat-page';
+import DMPage from './dm-page';
 import { cn } from '@/lib/utils';
-import { Search } from 'lucide-react';
 
 // Infralith Construction Intelligence Modules
 import DashboardHome from '@/components/infralith/DashboardHome';
@@ -25,22 +24,15 @@ import RiskView from '@/components/infralith/RiskView';
 import CostPrediction from '@/components/infralith/CostPrediction';
 import DecisionPanel from '@/components/infralith/DecisionPanel';
 import ReportView from '@/components/infralith/ReportView';
-
-function AISearchPlaceholder() {
-  return (
-    <div className="p-8 text-center space-y-4">
-      <div className="flex justify-center">
-        <div className="p-4 bg-primary/10 rounded-full">
-          <Search className="h-12 w-12 text-primary animate-pulse" />
-        </div>
-      </div>
-      <h2 className="text-2xl font-bold">Azure AI Search Index</h2>
-      <p className="text-muted-foreground max-w-md mx-auto">
-        Querying structural data via semantic search. All blueprint data is indexed and searchable across projects.
-      </p>
-    </div>
-  );
-}
+import CommunityPage from '@/components/infralith/CommunityPage';
+import AzureAISearchView from '@/components/infralith/AzureAISearch';
+import VirtualWarRoom from '@/components/infralith/VirtualWarRoom';
+import BlueprintTo3D from '@/components/infralith/BlueprintTo3D';
+import ConferenceRoom from '@/components/infralith/ConferenceRoom';
+import BlueprintHistory from '@/components/infralith/BlueprintHistory';
+import AnalyticsPanel from '@/components/infralith/AnalyticsPanel';
+import SmartSiteSimulator from '@/components/infralith/SmartSiteSimulator';
+import { NotificationProvider } from '@/components/infralith/NotificationBell';
 
 export default function CareerCompassLayout() {
   const { activeRoute, authed, showLogin } = useAppContext();
@@ -58,11 +50,18 @@ export default function CareerCompassLayout() {
     cost: gated(<CostPrediction />),
     decision: gated(<DecisionPanel />),
     report: gated(<ReportView />),
-    search: gated(<AISearchPlaceholder />),
-    community: gated(<CommunityPage />),
+    search: gated(<AzureAISearchView />),
     chat: gated(<ChatPage />),
+    messages: gated(<DMPage />),
+    community: gated(<CommunityPage />),
     profile: gated(<ProfilePage />),
     settings: gated(<SettingsPage />),
+    warroom: gated(<VirtualWarRoom />),
+    blueprint3d: gated(<BlueprintTo3D />),
+    conference: gated(<ConferenceRoom />),
+    history: gated(<BlueprintHistory />),
+    analytics: gated(<AnalyticsPanel />),
+    simulation: gated(<SmartSiteSimulator />),
   };
 
   const pageVariants = {
@@ -72,42 +71,44 @@ export default function CareerCompassLayout() {
   };
 
   return (
-    <>
-      <TwinklingStars />
-      <div className="h-screen w-full text-foreground font-body relative flex flex-col">
-        <Header
-          desktopSidebarCollapsed={desktopSidebarCollapsed}
-          onToggleDesktopSidebar={() => setDesktopSidebarCollapsed((c) => !c)}
-        />
+    <NotificationProvider>
+      <>
+        <TwinklingStars />
+        <div className="h-screen w-full text-foreground font-body relative flex flex-col">
+          <Header
+            desktopSidebarCollapsed={desktopSidebarCollapsed}
+            onToggleDesktopSidebar={() => setDesktopSidebarCollapsed((c) => !c)}
+          />
 
-        <div className="flex h-[calc(100vh-69px)]">
-          {authed && (
-            <>
-              <Sidebar collapsed={desktopSidebarCollapsed} />
-              <MobileSidebar />
-            </>
-          )}
+          <div className="flex h-[calc(100vh-69px)]">
+            {authed && (
+              <>
+                <Sidebar collapsed={desktopSidebarCollapsed} />
+                <MobileSidebar />
+              </>
+            )}
 
-          <main className={cn('flex-1 relative', 'p-4 md:p-6 space-y-6 overflow-y-auto')}>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeRoute}
-                variants={pageVariants}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-              >
-                {componentMap[activeRoute] ?? <DashboardHome />}
-              </motion.div>
-            </AnimatePresence>
-            {activeRoute === 'home' && <Footer />}
-          </main>
+            <main className={cn('flex-1 relative', 'p-4 md:p-6 space-y-6 overflow-y-auto')}>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeRoute}
+                  variants={pageVariants}
+                  initial="initial"
+                  animate="animate"
+                  exit="exit"
+                >
+                  {componentMap[activeRoute] ?? <DashboardHome />}
+                </motion.div>
+              </AnimatePresence>
+              {activeRoute === 'home' && <Footer />}
+            </main>
+          </div>
         </div>
-      </div>
 
-      <AnimatePresence>
-        {showLogin && <LoginDialog />}
-      </AnimatePresence>
-    </>
+        <AnimatePresence>
+          {showLogin && <LoginDialog />}
+        </AnimatePresence>
+      </>
+    </NotificationProvider>
   );
 }

@@ -4,11 +4,6 @@ import { authService, resumeService, SignUpData, chatHistoryService, ChatSession
 import type { Dispatch, ReactNode, SetStateAction } from 'react';
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { db } from '@/lib/firebase';
-import { ref, onValue, serverTimestamp } from 'firebase/database';
-import { RoastResumeOutput } from '@/ai/flows/roast-resume';
-import { RankResumeOutput } from '@/ai/flows/rank-resume';
-import { InterviewEvaluation } from '@/ai/flows/mock-interview-flow';
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { runInfralithWorkflow } from '@/ai/flows/infralith/workflow-orchestrator';
 import { WorkflowResult } from '@/ai/flows/infralith/types';
@@ -34,8 +29,8 @@ export interface ResumeRankerState {
   pdfPreviewUrl: string;
   jobRole: string;
   field: string;
-  rankingResult: RankResumeOutput | null;
-  roastResult: RoastResumeOutput | null;
+  rankingResult: any | null;
+  roastResult: any | null;
 }
 export interface MockInterviewState {
   uploadedFile: File | null;
@@ -46,7 +41,7 @@ export interface MockInterviewState {
   candidateName: string;
   resumeText: string;
   resumeAnalysis: any | null;
-  evaluation: InterviewEvaluation | null;
+  evaluation: any | null;
 }
 export interface SkillAssessmentState {
   answers: { [key: string]: any };
@@ -124,7 +119,7 @@ interface AppContextType {
   startChatWithEvaluationContext: (ctx: EvaluationContext) => void;
   refreshEvaluations: () => Promise<void>;
   generateUserProfileJsonForChat: () => string | null;
-  infralithResult: WorkflowResult | null;
+  infralithResult: any | null;
   runInfralithEvaluation: (input: string | File) => Promise<void>;
 }
 
@@ -202,7 +197,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const [resumeRankerState, setResumeRankerStateInternal] = useState<ResumeRankerState>(initialResumeRankerState);
   const [mockInterviewState, setMockInterviewStateInternal] = useState<MockInterviewState>(initialMockInterviewState);
-  const [infralithResult, setInfralithResult] = useState<WorkflowResult | null>(null);
+  const [infralithResult, setInfralithResult] = useState<any | null>(null);
 
   const [skillAssessmentState, setSkillAssessmentStateInternal] = useState<SkillAssessmentState>(() => {
     if (typeof window === 'undefined') {
@@ -211,11 +206,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const savedState = sessionStorage.getItem('skillAssessmentState');
       if (savedState) {
-        const parsedState = JSON.parse(savedState);
-        if (parsedState.analysis && !Array.isArray(parsedState.analysis.roles)) {
-          parsedState.analysis.roles = [];
-        }
-        return parsedState;
+        return JSON.parse(savedState);
       }
       return initialSkillAssessmentState;
     } catch (error) {
@@ -397,9 +388,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toast({
         variant: 'destructive',
         title: 'Sign-up Failed',
-        description: (error as any).code === 'auth/email-already-in-use'
-          ? 'This email is already registered.'
-          : 'An error occurred.'
+        description: 'An error occurred during sign-up.'
       });
       throw error;
     }
@@ -477,11 +466,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const startChatWithEvaluationContext = useCallback((ctx: EvaluationContext) => {
     if (!ctx || !ctx.type || !ctx.result) {
       console.error("Invalid evaluation context provided.");
-      toast({
-        variant: "destructive",
-        title: "Could not start chat",
-        description: "The evaluation data was missing or invalid."
-      });
       return;
     }
 
@@ -493,23 +477,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
       handleNavigate('chat');
     } catch (error) {
       console.error("Failed to serialize evaluation context:", error);
-      toast({
-        variant: "destructive",
-        title: "Error Starting Chat",
-        description: "There was a problem preparing the evaluation data. Please try again."
-      });
     }
-  }, [handleNavigate, toast]);
+  }, [handleNavigate]);
 
   const runInfralithEvaluation = async (input: string | File) => {
-    setIsAuthLoading(true); // Reusing auth loader for general processing feedback
+    setIsAuthLoading(true);
     try {
-      const result = await runInfralithWorkflow(input);
+      const formData = new FormData();
+      formData.append('file', input);
+
+      const result = await runInfralithWorkflow(formData);
+      console.log("DEBUG: Infralith Workflow Result on Client:", result);
       setInfralithResult(result);
 
-      // Persist result if user is logged in
       if (user?.uid) {
-        await infralithService.saveEvaluation(user.uid, result);
+        await infralithService.saveEvaluation(user.uid, result as any);
       }
 
       toast({
